@@ -29,12 +29,4 @@ func TestGetAPIKey(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "12345abcde", got)
 	})
-
-	t.Run("broken test", func(t *testing.T) {
-		header := http.Header{}
-		header.Set("Authorization", "ApiKey 12345abcde")
-		got, err := GetAPIKey(header)
-		assert.NoError(t, err)
-		assert.Equal(t, "", got)
-	})
 }
