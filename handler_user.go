@@ -48,7 +48,7 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	userResp, err := databaseUserToUser(user)
+	userResp, err := databaseUserToNewUser(user)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't convert user", err)
 		return
@@ -68,7 +68,6 @@ func generateRandomSHA256Hash() (string, error) {
 }
 
 func (cfg *apiConfig) handlerUsersGet(w http.ResponseWriter, r *http.Request, user database.User) {
-
 	userResp, err := databaseUserToUser(user)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't convert user", err)

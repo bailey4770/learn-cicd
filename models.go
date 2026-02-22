@@ -6,12 +6,18 @@ import (
 	"github.com/bootdotdev/learn-cicd-starter/internal/database"
 )
 
+/*Gosec marks exposed APIKey struct as a concern. This is valid, since original code was sharing users API key unnecessarily.
+* Response only ever needs to include API key from CreateUser endpoint. Other endpoints returning user details do not need to.
+* middlewareAuth func ensured user only ever gets their own api key in response, so concern is not HUGE.
+* However, unnecessary key exposure only increases risk of accidental key leakage.
+* Fix: create user endpoint has separate struct with exported api key. Not exported normally.*/
+
 type User struct {
 	ID        string    `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Name      string    `json:"name"`
-	ApiKey    string    `json:"api_key"`
+	apiKey    string
 }
 
 func databaseUserToUser(user database.User) (User, error) {
@@ -29,7 +35,23 @@ func databaseUserToUser(user database.User) (User, error) {
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
 		Name:      user.Name,
-		ApiKey:    user.ApiKey,
+	}, nil
+}
+
+type NewUser struct {
+	User
+	APIKey string `json:"api_key"` // #nosec G117
+}
+
+func databaseUserToNewUser(user database.User) (NewUser, error) {
+	u, err := databaseUserToUser(user)
+	if err != nil {
+		return NewUser{}, err
+	}
+
+	return NewUser{
+		User:   u,
+		APIKey: u.apiKey,
 	}, nil
 }
 

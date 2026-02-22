@@ -22,6 +22,10 @@ func respondWithError(w http.ResponseWriter, code int, msg string, logErr error)
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	/*Gosec marks this func as at risk of XSS via Taint Analysis attack. This is a false positive:
+	* - 'Content-Type' header is explicitly set as a non-executable (application/json) before writing.
+	* - Payload is sourced either from explicitly written strings in our code, our from database query results.
+	* - If unsafe data is stored in the database, this problem is better tackled at the input layer, not here.*/
 	w.Header().Set("Content-Type", "application/json")
 	dat, err := json.Marshal(payload)
 	if err != nil {
@@ -30,5 +34,9 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 		return
 	}
 	w.WriteHeader(code)
-	w.Write(dat)
+	if _, err := w.Write(dat); err != nil { // #nosec G705
+		log.Printf("Error writing data to response: %v", err)
+		w.WriteHeader(500)
+		return
+	}
 }

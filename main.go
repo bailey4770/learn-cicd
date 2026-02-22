@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
@@ -88,11 +89,24 @@ func main() {
 	v1Router.Get("/healthz", handlerReadiness)
 
 	router.Mount("/v1", v1Router)
+
+	/*Gosec highlights potential for Slowloris attack here.
+	* In Go, servers should always be defined with ReadHeaderTimeout to prevent these. 10s is a sane default.
+	* ReadTimeout, WriteTimeout, and IdleTimeout are not set to tackle Slowloris attack,
+	* but are good to set to ensure robustness and good resource management.
+	* Values will depend on what server is serving. We aren't streaming content, this is a simple JSON API.
+	* Therefore, 30 seconds each to read and write, with 120 second idle timeout is reasonable.*/
 	srv := &http.Server{
-		Addr:    ":" + port,
-		Handler: router,
+		Addr:              ":" + port,
+		Handler:           router,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
-	log.Printf("Serving on port: %s\n", port)
+	/* Potential for log injection here is false positive. Port is derived from .env file, and is only used to start server.
+	* If attacker had written false logs to port var in .env file, server would error during setup. */
+	log.Printf("Serving on port: %s\n", port) // #nosec G706
 	log.Fatal(srv.ListenAndServe())
 }
