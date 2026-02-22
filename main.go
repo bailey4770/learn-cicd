@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -31,9 +32,12 @@ func main() {
 		log.Printf("warning: assuming default configuration. .env unreadable: %v", err)
 	}
 
+	// force convering port var to int helps avoid log injection attack
 	port := os.Getenv("PORT")
-	if port == "" {
-		log.Fatal("PORT environment variable is not set")
+	const defaultPort = "8080"
+	if _, err := strconv.Atoi(port); err != nil || port == "" {
+		log.Printf("warning: invalid PORT set in .env, defaulting to %q", defaultPort)
+		port = defaultPort
 	}
 
 	apiCfg := apiConfig{}
@@ -105,8 +109,6 @@ func main() {
 		IdleTimeout:       120 * time.Second,
 	}
 
-	/* Potential for log injection here is false positive. Port is derived from .env file, and is only used to start server.
-	* If attacker had written false logs to port var in .env file, server would error during setup. */
-	log.Printf("Serving on port: %s\n", port) // #nosec G706
+	log.Printf("Serving on port: %s\n", port) // #nosec G706 - port has already been sanitised when loaded
 	log.Fatal(srv.ListenAndServe())
 }
