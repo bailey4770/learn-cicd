@@ -51,7 +51,7 @@ func databaseUserToNewUser(user database.User) (NewUser, error) {
 
 	return NewUser{
 		User:   u,
-		APIKey: u.apiKey,
+		APIKey: user.ApiKey,
 	}, nil
 }
 
