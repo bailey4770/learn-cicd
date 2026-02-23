@@ -102,7 +102,6 @@
             }
             const user = await getUser();
             currentUser = user;
-            currentUserAPIKey = user.api_key;
             await loadNotes();
 
             // When a user logs in, hide the user creation section and show the note section
